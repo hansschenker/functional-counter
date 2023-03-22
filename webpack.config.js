@@ -5,7 +5,7 @@ module.exports = {
   target: 'web',
   entry: path.resolve(__dirname,'./src/index.ts'),
   resolve: {
-    extensions: ['.tsx', '.ts', '.js'],
+    extensions: ['.tsx', '.ts', '.js','.jpg'],
   },
   output: {
     path: path.resolve(__dirname, 'dist/'),
@@ -24,6 +24,18 @@ module.exports = {
         test: /\.(ts|tsx)$/,
         use: 'ts-loader',
         exclude: /node_modules/,
+      },
+      {
+        test: /\.(png|jpg|gif)$/i,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: 'images/[name].[ext]',
+
+            }
+          },
+        ],
       },
       {
         test: /\.scss$/,
@@ -47,4 +59,5 @@ module.exports = {
   plugins: [new HtmlWebpackPlugin({
     template: './src/index.html'
   })],
+
 }

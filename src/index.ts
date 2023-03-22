@@ -1,47 +1,88 @@
-import {
-  fromEvent,
-  interval,
-  mapTo,
-  merge,
-  scan,
-  startWith,
-  switchMapTo,
-  takeUntil,
-  tap,
-} from "rxjs";
+import { fromEvent, merge, BehaviorSubject, of } from "rxjs";
+import { map, tap, filter, mergeMap, scan } from "rxjs/operators";
 
- const startButton = document.querySelector("#start");
-const stopButton = document.querySelector("#stopp");
-const resetButton = document.querySelector("#reset");
+import "./styles.css";
 
-const start$ = fromEvent(startButton!, "click")
-const stop$ = fromEvent(stopButton!, "click");
-const reset$ = fromEvent(resetButton!, "click");
+import img1 from "./assets/images/img-1.jpg"
+import img2 from "./assets/images/img-2.jpg"
+import img3 from "./assets/images/img-3.jpg"
+import img4 from "./assets/images/img-4.jpg"
 
-const interval$ = interval(1000)
+export type Product = {
+  id: number;
+  name: string;
+  price: number;
+  imageUrl: string;
+  description: string;
+};
+export type Cart = {products: Product[]};
+// product list
+const products = [
+  {
+    id: 2,
+    name: "Product 2",
+    price: 15,
+    imageUrl: "./assets/images/img-2.jpg",
+    description: "This is Product 2",
+  },
+  {
+    id: 1,
+    name: "Product 1",
+    price: 10,
+    imageUrl: "./assets/images/img-1.jpg",
+    description: "This is Product 1",
+  },
 
-const stopOrReset$ = merge(stop$, reset$);
+  {
+    id: 3,
+    name: "Product 3",
+    price: 20,
+    imageUrl: "./assets/images/img-3.jpg",
+    description: "This is Product 3",
+  },
+  {
+    id: 4,
+    name: "Product 4",
+    price: 40,
+    imageUrl: "./assets/images/img-4.jpg",
+    description: "This is Product 4",
+  },
+];
 
-const pausible$ = interval$.pipe(takeUntil(stopOrReset$))
+const productState = of(products);
 
+const productListEl = document.querySelector("#product-list");
 
-const initialValue = 0;
+// cart
+const cartEl = document.querySelector(".cart");
 
-const inc = (acc: number): number => acc + 1;
-const reset = (acc: number):number => 0;
+const addProductLi = (product: Product) => {
+  let img
+  if (product.id === 1) {
+    img = img1
+  } else if (product.id === 2) {
+    img = img2
+  } else if (product.id === 3){
+    img = img3
+  } else if (product.id === 4) {
+    img = img4
+  }
+  return `<li class="product" id="${product.id}">
+  <div>${product.name}</div>
+  <img width="100" src= ${img} />
+  </li>`;
+};
 
-const incOrReset$ = merge(
-    pausible$.pipe(mapTo(inc)),
-    reset$.pipe(mapTo(reset))
-);
+// products display
+products.forEach((product) => {
+  const productLi = document.createElement("li");
+  productLi.innerHTML = addProductLi(product);
+  productListEl!.appendChild(productLi);
+});
 
-reset$.pipe(mapTo(reset));
-
-const app$ = start$.pipe(
-    switchMapTo(incOrReset$),
-    startWith(initialValue),
-    // @ts-ignore
-    scan((acc, curr) => curr(acc))
-  )
-
-app$//.subscribe(console.log)
+const productListChange = fromEvent<MouseEvent>(
+  productListEl!,
+  "click"
+).subscribe((e: MouseEvent) => {
+  console.log("product change", e.target);
+});
