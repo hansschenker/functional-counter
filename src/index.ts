@@ -1,88 +1,67 @@
-import { fromEvent, merge, BehaviorSubject, of } from "rxjs";
-import { map, tap, filter, mergeMap, scan } from "rxjs/operators";
+import h from "hyperscript"
+import hh from "hyperscript-helpers"
 
-import "./styles.css";
+const { div, button } = hh(h)
 
-import img1 from "./assets/images/img-1.jpg"
-import img2 from "./assets/images/img-2.jpg"
-import img3 from "./assets/images/img-3.jpg"
-import img4 from "./assets/images/img-4.jpg"
 
-export type Product = {
-  id: number;
-  name: string;
-  price: number;
-  imageUrl: string;
-  description: string;
-};
-export type Cart = {products: Product[]};
-// product list
-const products = [
-  {
-    id: 2,
-    name: "Product 2",
-    price: 15,
-    imageUrl: "./assets/images/img-2.jpg",
-    description: "This is Product 2",
-  },
-  {
-    id: 1,
-    name: "Product 1",
-    price: 10,
-    imageUrl: "./assets/images/img-1.jpg",
-    description: "This is Product 1",
-  },
 
-  {
-    id: 3,
-    name: "Product 3",
-    price: 20,
-    imageUrl: "./assets/images/img-3.jpg",
-    description: "This is Product 3",
-  },
-  {
-    id: 4,
-    name: "Product 4",
-    price: 40,
-    imageUrl: "./assets/images/img-4.jpg",
-    description: "This is Product 4",
-  },
-];
+type Model = {
+  count: number
+}
 
-const productState = of(products);
 
-const productListEl = document.querySelector("#product-list");
+interface SubtractEvent { kind:'subtract', by:number }
+interface AddEvent { kind:'add', by:number }
 
-// cart
-const cartEl = document.querySelector(".cart");
 
-const addProductLi = (product: Product) => {
-  let img
-  if (product.id === 1) {
-    img = img1
-  } else if (product.id === 2) {
-    img = img2
-  } else if (product.id === 3){
-    img = img3
-  } else if (product.id === 4) {
-    img = img4
+type CountEvent = SubtractEvent | AddEvent
+
+const initialModel:Model = {
+  count : 0
+}
+type Dispatch = (msg: string) => void
+
+type View = (dispatch:Dispatch, model:Model) => HTMLDivElement
+function view(dispatch:Dispatch, model:Model) {
+  return div([
+    div({className:"mv2"}, `Count: ${model.count}`),
+    button({className:"pv1 ph2 mr2",
+            onclick: () => dispatch("plus")},
+            "+"),
+    button({className:"pv1 ph2",
+            onclick: () => dispatch("minus")},
+            "-"),
+  ])
+}
+
+type Update = (model:Model, evt:string) => Model
+
+function update(model:Model, evt:string): Model  {
+  switch (evt) {
+    case 'minus': return {...model, count: model.count -1};
+    case 'plus':  return {...model, count: model.count + 1};
+    default: return model;
   }
-  return `<li class="product" id="${product.id}">
-  <div>${product.name}</div>
-  <img width="100" src= ${img} />
-  </li>`;
-};
+}
 
-// products display
-products.forEach((product) => {
-  const productLi = document.createElement("li");
-  productLi.innerHTML = addProductLi(product);
-  productListEl!.appendChild(productLi);
-});
+// app function connects all the pieces together
+function app(initialModel:Model, update:Update, view:View, node:HTMLDivElement) {
+  
+  // initial render
+  let model = initialModel
+  let currentView = view(dispatch,model)
+  node.appendChild(currentView)
+  // subsequent render based on user action ('plus' or 'minus')
+  function dispatch(msg: string) {
+    model = update(model,msg)
+    const updatedView = view(dispatch,model)
+    // show the updated view with the updated state
+    node.replaceChild(updatedView,currentView)
+    currentView = updatedView
+  }
 
-const productListChange = fromEvent<MouseEvent>(
-  productListEl!,
-  "click"
-).subscribe((e: MouseEvent) => {
-  console.log("product change", e.target);
-});
+}
+// mount app
+const rootNode = document.getElementById("app") as HTMLDivElement
+app(initialModel, update, view, rootNode)
+// rootNode!.appendChild(view(update(initialModel,"plus")));
